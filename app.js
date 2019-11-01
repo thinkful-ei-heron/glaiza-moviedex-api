@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 require('dotenv').config();
-const API_TOKEN = process.env.API_SECRET;
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
@@ -10,28 +9,27 @@ const MOVIES = require('./movies-data-small.json');
 
 const app = express();
 
-app.use(morgan('common'));
+const morganSetting = process.env.NODE_ENV === 'production' ? 'tiny' : 'common';
+app.use(morgan(morganSetting));
 app.use(cors());
 app.use(helmet());
 
-function validateBearer(req, res, next) {
+app.use(function validateBearer(req, res, next) {
+    const apiToken = process.env.API_TOKEN;
     const authVal = req.get('Authorization') || '';
-    if (!authVal.startsWith('Bearer ')) {
+
+    if (!authVal || authVal.split(' ')[1] !== apiToken) {
         return res.status(400).json({error: 'Authorization token not found'});
     }
-
-    const [bearer ,token] = authVal.split(' ');
-    if(token !== API_TOKEN) {
-        return res.status(401).json({error: 'Token is invalid'});
-    }
+    // move to the next middleware
     next();
-}
+});
 
 app.get('/', (req, res) => {
     res.send('Hello Express!');
 });
 
-app.get('/movie', validateBearer, (req, res) => {
+app.get('/movie', (req, res) => {
     let apps = MOVIES;
     const {genre, country, avg_vote} = req.query;
 
@@ -50,7 +48,18 @@ app.get('/movie', validateBearer, (req, res) => {
     res.json(apps);
 });
 
-const PORT = 8000;
+// 4 parameters in middleware, express knows to treat this as error handler
+app.use((error, req, res, next) => {
+    let response;
+    if (process.env.NODE_ENV === 'production') {
+        response = { error: { message: 'server error' }}
+    } else {
+        response = { error };
+    }
+    res.status(500).json(response);
+});
+
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server listening at http://localhost:${PORT}`);
 });

@@ -1,16 +1,20 @@
 {
-  "name": "moviedex-api-Jonny-Glaiza",
+  "name": "moviedex-api-deploy",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thinkful-ei-heron/express_drills_Jonny_Maria.git"
   },
   "keywords": [],
+  "engines" : {
+    "node" : "10.16.3"
+  },
   "author": "",
   "license": "ISC",
   "bugs": {
