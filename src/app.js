@@ -4,21 +4,24 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
-
-const MOVIES = require('./movies-data-small.json');
+const logger = require('./logger');
+const { NODE_ENV } = require('./config');
+const MOVIES = require('./store');
 
 const app = express();
 
-const morganSetting = process.env.NODE_ENV === 'production' ? 'tiny' : 'common';
+const morganSetting = NODE_ENV === 'production' ? 'tiny' : 'common';
 app.use(morgan(morganSetting));
 app.use(cors());
 app.use(helmet());
 
+/* Authentication handler */
 app.use(function validateBearer(req, res, next) {
     const apiToken = process.env.API_TOKEN;
     const authVal = req.get('Authorization') || '';
 
     if (!authVal || authVal.split(' ')[1] !== apiToken) {
+        logger.error(`Unauthorized request to path: ${req.path}`);
         return res.status(400).json({error: 'Authorization token not found'});
     }
     // move to the next middleware
@@ -48,7 +51,7 @@ app.get('/movie', (req, res) => {
     res.json(apps);
 });
 
-// 4 parameters in middleware, express knows to treat this as error handler
+/* Error handler middleware */
 app.use((error, req, res, next) => {
     let response;
     if (process.env.NODE_ENV === 'production') {
@@ -59,7 +62,5 @@ app.use((error, req, res, next) => {
     res.status(500).json(response);
 });
 
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-    console.log(`Server listening at http://localhost:${PORT}`);
-});
+
+module.exports = app;
